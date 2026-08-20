@@ -1,0 +1,191 @@
+{% extends 'base.html' %}
+{% block title %}{% if note %}编辑笔记{% else %}写笔记{% endif %}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-6">
+    <h2>{% if note %}✏️ 编辑笔记{% else %}✏️ 写笔记{% endif %}</h2>
+    <p><a class="back-link" href="{% if note %}{% url 'note_detail' note.pk %}{% else %}{% url 'my_notes' %}{% endif %}">← 返回</a></p>
+    {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">标题</label>
+        <input class="form-control" name="title" id="title" value="{{ note.title|default:'' }}" placeholder="笔记标题..." required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">内容 <small class="text-muted">（支持 Markdown，右侧实时预览）</small></label>
+        <div class="mb-2">
+          <button type="button" id="ai-expand-btn" class="btn btn-outline-secondary btn-sm">✨ AI 扩写</button>
+          <button type="button" id="ai-fix-btn" class="btn btn-outline-secondary btn-sm">🔧 修正格式</button>
+          <span id="ai-msg" class="text-muted ms-2"></span>
+        </div>
+        <textarea class="form-control" name="content" id="content" rows="18" placeholder="用 Markdown 写笔记...">{{ note.content|default:'' }}</textarea>
+        <div class="mt-2">
+          <label class="btn btn-outline-secondary btn-sm">
+            📷 上传图片
+            <input type="file" id="image-input" accept="image/*" class="d-none">
+          </label>
+          <span id="upload-msg" class="text-muted ms-2"></span>
+          <div id="upload-preview" class="d-flex flex-wrap gap-1 mt-2"></div>
+        </div>
+      </div>
+      <div class="row mb-3">
+        <div class="col-md-6">
+          <label class="form-label">笔记本</label>
+          <select class="form-select" name="notebook">
+            <option value="">-- 无 --</option>
+            {% for nb in notebooks %}
+              <option value="{{ nb.id }}" {% if note.notebook_id == nb.id %}selected{% endif %}>{{ nb.name }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="col-md-6">
+          <label class="form-label">标签（逗号分隔）</label>
+          <input class="form-control" name="tags" value="{% for t in note.tags.all %}{{ t.name }},{% endfor %}" placeholder="Python, Django, 入门">
+        </div>
+      </div>
+      <div class="form-check mb-3">
+        <input class="form-check-input" type="checkbox" name="is_public" id="is_public" {% if note.is_public %}checked{% endif %}>
+        <label class="form-check-label" for="is_public">公开此笔记</label>
+      </div>
+      <button class="btn btn-primary">💾 保存</button>
+      <a href="{% if note %}{% url 'note_detail' note.pk %}{% else %}{% url 'my_notes' %}{% endif %}" class="btn btn-outline-secondary">取消</a>
+    </form>
+  </div>
+  <div class="col-lg-6">
+    <div class="editor-preview card p-3">
+      <h6>👁 实时预览</h6>
+      <div class="markdown-body" id="live-preview"></div>
+    </div>
+  </div>
+</div>
+<script src="https://cdn.bootcdn.net/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<script>
+// ========== 实时预览：标题 + 内容 → Markdown 渲染 → 右侧预览区 ==========
+var titleInput = document.getElementById('title');
+var contentTextarea = document.getElementById('content');
+var previewBox = document.getElementById('live-preview');
+
+function renderPreview() {
+    // 标题作为一级标题拼在正文前面，预览所见即详情页所见
+    var text = '# ' + (titleInput.value || '未命名笔记') + '\n\n' + contentTextarea.value;
+    var result = marked.parse(text);
+    // marked 某些版本返回 Promise，兼容两种写法
+    if (result && typeof result.then === 'function') {
+        result.then(function (html) { previewBox.innerHTML = html; });
+    } else {
+        previewBox.innerHTML = result;
+    }
+}
+titleInput.addEventListener('input', renderPreview);
+contentTextarea.addEventListener('input', renderPreview);
+renderPreview();   // 页面打开时先渲染一次（编辑旧笔记时立刻能看到效果）
+
+// ========== AI 扩写 / 修正格式：把内容框文字发给后端，结果替换内容框 ==========
+var aiMsgBox = document.getElementById('ai-msg');
+
+function callAi(url, button, waitingText, originalText) {
+    var content = contentTextarea.value.trim();
+    if (!content) { aiMsgBox.textContent = '请先写一些内容'; return; }
+
+    button.disabled = true;
+    button.textContent = waitingText;
+    aiMsgBox.textContent = 'AI 生成中，请稍等...';
+
+    var formData = new FormData();
+    formData.append('content', content);
+
+    fetch(url, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},
+        body: formData
+    }).then(function (resp) { return resp.json(); })
+      .then(function (data) {
+          if (data.error) { aiMsgBox.textContent = '出错了：' + data.error; return; }
+          // 结果替换整个内容框，再渲染预览（保存前可随意撤销重来）
+          contentTextarea.value = data.result;
+          renderPreview();
+          aiMsgBox.textContent = '完成，检查一下再保存';
+      })
+      .catch(function () { aiMsgBox.textContent = '请求失败，请检查网络'; })
+      .finally(function () { button.disabled = false; button.textContent = originalText; });
+}
+
+document.getElementById('ai-expand-btn').addEventListener('click', function () {
+    callAi("{% url 'note_ai_expand' %}", this, '⏳ 生成中...', '✨ AI 扩写');
+});
+document.getElementById('ai-fix-btn').addEventListener('click', function () {
+    callAi("{% url 'note_ai_fix' %}", this, '⏳ 生成中...', '🔧 修正格式');
+});
+
+// ========== 图片上传：选文件/粘贴截图 → 上传服务器 → 插入 Markdown 语法 ==========
+var uploadUrl = "{% url 'upload_image' %}";   // 地址由 Django 生成，不写死
+// CSRF token 从表单里 {% csrf_token %} 生成的隐藏输入框读取
+var csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+function showMsg(text) {
+    document.getElementById('upload-msg').textContent = text;
+}
+
+function insertText(text) {
+    // 把文字插入到光标所在位置，插入后重新渲染预览
+    var start = contentTextarea.selectionStart;
+    var end = contentTextarea.selectionEnd;
+    contentTextarea.value = contentTextarea.value.slice(0, start) + text + contentTextarea.value.slice(end);
+    contentTextarea.selectionStart = contentTextarea.selectionEnd = start + text.length;
+    contentTextarea.focus();
+    renderPreview();
+}
+
+function uploadImage(file) {
+    // 前端先拦一道 5MB，避免用户白等（真正的校验在服务器端）
+    if (file.size > 5 * 1024 * 1024) { showMsg('图片不能超过 5MB'); return; }
+
+    var formData = new FormData();
+    formData.append('image', file);
+    showMsg('上传中...');
+
+    fetch(uploadUrl, {
+        method: 'POST',
+        headers: {'X-CSRFToken': csrfToken},   // CSRF 校验：通过请求头传递
+        body: formData
+        // 重要：不要手动设置 Content-Type！浏览器会自动加上 multipart 边界，
+        // 手动设置会导致服务器解析不出文件
+    }).then(function (resp) { return resp.json(); })
+      .then(function (data) {
+          if (data.error) { showMsg('上传失败：' + data.error); return; }
+          // 去掉文件名里会破坏 Markdown 语法的字符，用作图片的替换文字
+          var alt = (file.name || '图片').replace(/[\[\]()]/g, '');
+          // 前后加换行，避免图片语法和正文挤在同一行
+          insertText('\n![' + alt + '](' + data.url + ')\n');
+          // 追加缩略图预览（保留多张，方便确认传过哪些图）
+          document.getElementById('upload-preview').insertAdjacentHTML('beforeend',
+              '<img src="' + data.url + '" class="img-thumbnail" style="max-width:240px; max-height:160px;">');
+          showMsg('上传成功');
+      })
+      .catch(function () { showMsg('上传失败，请检查网络'); });
+}
+
+// 方式一：点击"上传图片"按钮选文件（点击 label 相当于点击里面的 input）
+document.getElementById('image-input').addEventListener('change', function (e) {
+    if (e.target.files.length > 0) {
+        uploadImage(e.target.files[0]);
+        e.target.value = '';   // 清空选择，让同一个文件能再次上传
+    }
+});
+
+// 方式二：在内容框里直接粘贴截图（剪贴板里有图片时）
+contentTextarea.addEventListener('paste', function (e) {
+    var items = e.clipboardData && e.clipboardData.items;
+    if (!items) return;
+    for (var i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') === 0) {   // 剪贴板里有图片（如截图）
+            e.preventDefault();                       // 阻止默认行为，不往框里塞乱码
+            uploadImage(items[i].getAsFile());
+            return;
+        }
+    }
+    // 剪贴板里没有图片时不做任何事，正常粘贴文字
+});
+</script>
+{% endblock %}

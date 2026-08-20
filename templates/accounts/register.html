@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+{% block title %}注册{% endblock %}
+{% block content %}
+<div class="row"><div class="col-md-4 offset-md-4 auth-page">
+<h3 class="text-center mb-4">注册</h3>
+<form method="post">
+  {% csrf_token %}
+  {% if form.errors %}
+    <div class="alert alert-danger">
+      {% for field, errors in form.errors.items %}
+        {% for error in errors %}{{ error }}<br>{% endfor %}
+      {% endfor %}
+    </div>
+  {% endif %}
+  <div class="mb-3">
+    <input class="form-control" name="username" placeholder="用户名" required
+           value="{{ form.username.value|default_if_none:'' }}">
+  </div>
+  <div class="mb-3">
+    <input class="form-control" type="password" name="password1" placeholder="密码" required>
+  </div>
+  <div class="mb-3">
+    <input class="form-control" type="password" name="password2" placeholder="确认密码" required>
+  </div>
+  <button class="btn btn-primary w-100">注册</button>
+</form>
+<p class="text-center mt-3"><a href="{% url 'login' %}">已有账号？登录</a></p>
+</div></div>
+{% endblock %}

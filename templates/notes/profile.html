@@ -1,0 +1,136 @@
+{% extends 'base.html' %}
+{% block title %}个人中心 — {{ user.username }}{% endblock %}
+{% block content %}
+<h3>👤 个人中心</h3>
+<p class="text-muted">{{ user.username }}</p>
+
+<div class="row mb-4">
+  <div class="col-md-3">
+    <div class="note-card text-center">
+      <div class="fs-3 fw-bold stat-number">{{ note_count }}</div>
+      <div class="text-muted">笔记总数</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="note-card text-center">
+      <div class="fs-3 fw-bold stat-number">{{ total_views }}</div>
+      <div class="text-muted">总浏览量</div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-lg-7 mb-3">
+    <div class="note-card">
+      <h6>最近 30 天创作趋势</h6>
+      <canvas id="trendChart" height="110"></canvas>
+    </div>
+  </div>
+  <div class="col-lg-5 mb-3">
+    <div class="note-card">
+      <h6>标签分布</h6>
+      <canvas id="tagChart" height="110"></canvas>
+    </div>
+  </div>
+  <div class="col-12 mb-3">
+    <div class="note-card">
+      <h6>浏览量 Top 10</h6>
+      <canvas id="topChart" height="110"></canvas>
+    </div>
+  </div>
+</div>
+
+{# json_script 是 Django 自带的防 XSS 数据传递方式，JS 端 JSON.parse 读取 #}
+{{ trend_labels|json_script:"trend-labels" }}
+{{ trend_data|json_script:"trend-data" }}
+{{ tag_labels|json_script:"tag-labels" }}
+{{ tag_data|json_script:"tag-data" }}
+{{ top_labels|json_script:"top-labels" }}
+{{ top_data|json_script:"top-data" }}
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
+<script>
+  // 图表配色（经 dataviz 校验脚本通过）：系列蓝 #4A90D9 + 中性文字色，单系列不显示图例
+  var INK = '#52514e', TICK = '#898781', GRID = '#e1e0d9', AXIS = '#c3c2b7', BLUE = '#4A90D9';
+  Chart.defaults.font.family = "'Microsoft YaHei', sans-serif";
+  Chart.defaults.color = TICK;
+
+  // 图 1：30 天创作趋势折线（2px 细线 + 10% 透明面积填充 + 十字线提示）
+  var trendLabels = JSON.parse(document.getElementById('trend-labels').textContent);
+  var trendData = JSON.parse(document.getElementById('trend-data').textContent);
+  new Chart(document.getElementById('trendChart'), {
+    type: 'line',
+    data: { labels: trendLabels, datasets: [{
+      data: trendData, borderColor: BLUE, backgroundColor: 'rgba(74,144,217,0.10)',
+      borderWidth: 2, pointRadius: 0, fill: true, tension: 0.35
+    }]},
+    options: {
+      plugins: { legend: { display: false },
+                 tooltip: { mode: 'index', intersect: false } },
+      scales: {
+        x: { grid: { display: false }, ticks: { maxTicksLimit: 10 } },
+        y: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
+             ticks: { precision: 0 } }
+      }
+    }
+  });
+
+  // 图 2：标签分布柱状（数据端 4px 圆角、基线端直角，最粗 24px）
+  var tagLabels = JSON.parse(document.getElementById('tag-labels').textContent);
+  var tagData = JSON.parse(document.getElementById('tag-data').textContent);
+  new Chart(document.getElementById('tagChart'), {
+    type: 'bar',
+    data: { labels: tagLabels, datasets: [{
+      data: tagData, backgroundColor: BLUE, maxBarThickness: 24,
+      borderRadius: { topLeft: 4, topRight: 4 }
+    }]},
+    options: {
+      plugins: { legend: { display: false },
+                 tooltip: { intersect: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
+             ticks: { precision: 0 } }
+      }
+    }
+  });
+
+  // 图 3：浏览量 Top 10 横向条形（数据反转让第一名在最上，条形尖端直接标数值）
+  var topLabels = JSON.parse(document.getElementById('top-labels').textContent);
+  var topData = JSON.parse(document.getElementById('top-data').textContent);
+  topLabels = topLabels.slice().reverse();
+  topData = topData.slice().reverse();
+  new Chart(document.getElementById('topChart'), {
+    type: 'bar',
+    data: { labels: topLabels, datasets: [{
+      data: topData, backgroundColor: BLUE, maxBarThickness: 20,
+      borderRadius: { topRight: 4, bottomRight: 4 }
+    }]},
+    options: {
+      indexAxis: 'y',
+      plugins: { legend: { display: false },
+                 tooltip: { intersect: false } },
+      scales: {
+        x: { beginAtZero: true, grid: { color: GRID }, border: { color: AXIS },
+             ticks: { precision: 0 } },
+        y: { grid: { display: false } }
+      }
+    },
+    plugins: [{
+      // 小插件：每根条形的数据端右侧标上数值
+      afterDatasetsDraw: function(chart) {
+        var ctx = chart.ctx;
+        chart.getDatasetMeta(0).data.forEach(function(bar, i) {
+          ctx.fillStyle = INK;
+          ctx.font = "12px 'Microsoft YaHei'";
+          ctx.textAlign = 'left';
+          ctx.textBaseline = 'middle';
+          ctx.fillText(topData[i], bar.x + 6, bar.y);
+        });
+      }
+    }]
+  });
+</script>
+{% endblock %}

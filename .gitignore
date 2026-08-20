@@ -1,0 +1,16 @@
+# Python 缓存
+__pycache__/
+*.pyc
+
+# 数据库（含用户数据，不入库）
+db.sqlite3
+
+# 用户上传的图片
+media/
+
+# 环境变量（API 密钥等）
+.env
+
+# 虚拟环境
+venv/
+.venv/

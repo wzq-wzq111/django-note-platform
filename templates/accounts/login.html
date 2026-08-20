@@ -1,0 +1,18 @@
+{% extends 'base.html' %}
+{% block title %}登录{% endblock %}
+{% block content %}
+<div class="row"><div class="col-md-4 offset-md-4 auth-page">
+<h3 class="text-center mb-4">登录</h3>
+<form method="post">
+  {% csrf_token %}
+  <div class="mb-3">
+    <input class="form-control" name="username" placeholder="用户名" required>
+  </div>
+  <div class="mb-3">
+    <input class="form-control" type="password" name="password" placeholder="密码" required>
+  </div>
+  <button class="btn btn-primary w-100">登录</button>
+</form>
+<p class="text-center mt-3"><a href="{% url 'register' %}">还没有账号？注册</a></p>
+</div></div>
+{% endblock %}

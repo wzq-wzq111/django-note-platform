@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}我的笔记{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-3">
+    <div class="card p-3 mb-3">
+      <h6>📁 笔记本</h6>
+      <a href="{% url 'my_notes' %}" class="d-block mb-1">📋 全部</a>
+      {% for nb in notebooks %}
+        <a href="{% url 'my_notes' %}?notebook={{ nb.id }}" class="d-block mb-1">📁 {{ nb.name }}</a>
+      {% endfor %}
+      <form method="post" action="{% url 'notebook_create' %}" class="mt-2 input-group input-group-sm">
+        {% csrf_token %}
+        <input class="form-control" name="name" placeholder="新建笔记本">
+        <button class="btn btn-outline-primary btn-sm">+</button>
+      </form>
+    </div>
+  </div>
+  <div class="col-md-9">
+    <form class="mb-3" method="get">
+      <input class="form-control" name="q" value="{{ query }}" placeholder="🔍 搜索我的笔记...">
+    </form>
+    {% if notes %}
+      {% for note in notes %}
+      <div class="note-card d-flex align-items-start gap-3">
+        {% if note.first_image %}
+          <img src="{{ note.first_image }}" class="note-thumb" alt="">
+        {% endif %}
+        <a href="{% url 'note_detail' note.pk %}" class="flex-grow-1">
+          <h5>{{ note.title }} {% if note.is_public %}<span class="badge bg-success">公开</span>{% else %}<span class="badge bg-secondary">私有</span>{% endif %}</h5>
+          <small class="text-muted">{{ note.updated_at|date:"Y-m-d H:i" }}</small>
+        </a>
+        <div class="text-nowrap ms-3">
+          <a href="{% url 'note_edit' note.pk %}" class="btn btn-sm btn-outline-secondary">编辑</a>
+          <a href="{% url 'note_delete' note.pk %}" class="btn btn-sm btn-outline-danger">删除</a>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state"><span class="empty-icon">📭</span><a href="{% url 'note_create' %}">写第一篇笔记</a></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

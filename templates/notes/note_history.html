@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% block title %}历史版本 — {{ note.title }}{% endblock %}
+{% block content %}
+<div class="row"><div class="col-lg-9">
+<h3>🕐 历史版本</h3>
+<p><a class="back-link" href="{% url 'note_detail' note.pk %}">← 返回笔记</a></p>
+<p class="text-muted">《{{ note.title }}》共 {{ versions|length }} 个版本</p>
+{% if error %}<div class="alert alert-warning">{{ error }}</div>{% endif %}
+{% if versions %}
+  <form method="get" action="{% url 'note_history_compare' note.pk %}" class="card p-3 mb-3">
+    <div class="row g-2">
+      <div class="col-5">
+        <label class="form-label">旧版本</label>
+        <select class="form-select" name="v1">
+          {% for v in versions %}
+            <option value="{{ v.pk }}">#{{ v.pk }} {{ v.revision.date_created|date:"m-d H:i" }} {{ v.field_dict.title|truncatechars:15 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-5">
+        <label class="form-label">新版本</label>
+        <select class="form-select" name="v2">
+          {% for v in versions %}
+            <option value="{{ v.pk }}" {% if forloop.first %}selected{% endif %}>#{{ v.pk }} {{ v.revision.date_created|date:"m-d H:i" }} {{ v.field_dict.title|truncatechars:15 }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="col-2 d-flex align-items-end">
+        <button class="btn btn-primary w-100">对比</button>
+      </div>
+    </div>
+    <div class="mt-2"><a href="{% url 'note_history_compare' note.pk %}">直接对比最新两次</a></div>
+  </form>
+  {% for v in versions %}
+  <div class="note-card">
+    <strong>{{ v.field_dict.title|default:"（无标题）" }}</strong>
+    <small class="text-muted d-block">
+      {{ v.revision.date_created|date:"Y-m-d H:i" }}
+      {% if v.revision.user %} · {{ v.revision.user.username }}{% endif %}
+      {% if v.revision.comment %} · {{ v.revision.comment }}{% endif %}
+    </small>
+    <small class="text-muted">{{ v.field_dict.content|truncatechars:60 }}</small>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">还没有历史版本</div>
+{% endif %}
+<p class="mt-3"><a href="{% url 'note_detail' note.pk %}">← 返回笔记</a></p>
+</div></div>
+{% endblock %}

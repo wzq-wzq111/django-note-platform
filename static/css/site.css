@@ -1,0 +1,176 @@
+/* ===== 笔记平台站点样式 =====
+   美化主题：清新蓝紫渐变风，站点主色 #4A90D9
+   注意：个人中心的图表配色（Chart.js 内常量）经 dataviz 校验，
+   不在本文件覆盖，仅美化一般界面元素。 */
+
+/* --- 基础 --- */
+body {
+  background: linear-gradient(180deg, #eef4fb 0%, #f7f8fa 45%);
+  background-attachment: fixed;
+  font-family: 'Microsoft YaHei', sans-serif;
+  color: #2c3e50;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* 内容区占满剩余高度，让页脚贴底 */
+.container { flex: 1 0 auto; }
+
+/* --- 导航栏：蓝→紫渐变 --- */
+.site-navbar {
+  background: linear-gradient(135deg, #4A90D9, #7B6BE6);
+  box-shadow: 0 2px 10px rgba(74, 144, 217, 0.35);
+  margin-bottom: 24px;
+}
+.site-navbar .navbar-brand { font-weight: bold; color: #fff !important; font-size: 1.3rem; }
+.site-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.92);
+  border-radius: 6px;
+  padding: 6px 14px;
+  transition: background 0.2s;
+}
+.site-navbar .nav-link:hover { color: #fff; background: rgba(255, 255, 255, 0.18); }
+
+/* --- 笔记卡片：左侧主色竖条 + 悬停上浮 --- */
+.note-card {
+  background: white;
+  border-left: 4px solid #4A90D9;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.note-card:hover {
+  box-shadow: 0 6px 18px rgba(74, 144, 217, 0.18);
+  transform: translateY(-3px);
+}
+.note-card a { text-decoration: none; color: #333; }
+.note-card h5 { margin-bottom: 6px; transition: color 0.2s; }
+.note-card a:hover h5 { color: #4A90D9; }
+
+/* 列表卡片里的图片缩略图（笔记正文第一张图） */
+.note-thumb {
+  width: 130px;
+  height: 90px;
+  object-fit: cover;   /* 图片按比例裁剪填满，不变形 */
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+/* --- Bootstrap 卡片统一美化 --- */
+.card {
+  border-radius: 12px;
+  border: 1px solid #dbe7f5;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.2s;
+}
+.card:hover { box-shadow: 0 4px 14px rgba(74, 144, 217, 0.14); }
+
+/* --- 侧边栏卡片：顶部 3px 彩色条 --- */
+.side-card { position: relative; overflow: hidden; }
+.side-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+}
+.side-card-blue::before { background: #4A90D9; }
+.side-card-green::before { background: #34a853; }
+.side-card-orange::before { background: #f5a623; }
+.side-card-purple::before { background: #7B6BE6; }
+
+/* --- AI 输出结果框 --- */
+.ai-result {
+  background: #f8f9fc;
+  border: 1px solid #e3e8f2;
+  border-radius: 8px;
+  padding: 10px;
+  max-height: 260px;
+  overflow-y: auto;
+  font-size: 14px;
+  white-space: pre-wrap;   /* 保留换行，Markdown 原文可读 */
+}
+
+/* --- 主按钮：主题蓝 + 圆角 --- */
+.btn-primary {
+  --bs-btn-bg: #4A90D9;
+  --bs-btn-border-color: #4A90D9;
+  --bs-btn-hover-bg: #5B9BE0;
+  --bs-btn-hover-border-color: #5B9BE0;
+  --bs-btn-active-bg: #3D7CC0;
+  --bs-btn-active-border-color: #3D7CC0;
+  border-radius: 8px;
+}
+
+/* --- 标签胶囊：浅蓝渐变 --- */
+.tag-badge {
+  background: linear-gradient(135deg, #e8f0fe, #dce8ff);
+  color: #4A90D9;
+  padding: 3px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  display: inline-block;
+  margin: 2px;
+}
+
+/* --- 正文排版（Markdown 渲染） --- */
+.markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 24px; color: #2c3e50; }
+.markdown-body h1, .markdown-body h2 {
+  border-left: 4px solid #4A90D9;
+  padding-left: 12px;
+}
+.markdown-body pre { background: #2d2d2d; color: #f8f8f2; padding: 16px; border-radius: 8px; overflow-x: auto; }
+.markdown-body code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; }
+.markdown-body table { border-collapse: collapse; width: 100%; }
+.markdown-body td, .markdown-body th { border: 1px solid #ddd; padding: 8px; }
+.markdown-body img { max-width: 100%; height: auto; }
+
+/* --- 目录 --- */
+.toc ul { list-style: none; padding-left: 0; margin: 0; }
+.toc ul ul { padding-left: 16px; }
+.toc a { color: #6c757d; text-decoration: none; font-size: 14px; display: block; padding: 2px 0; }
+.toc a:hover { color: #4A90D9; }
+
+/* --- 版本对比：红删绿增（配色不动） --- */
+.diff-del { background: #ffeef0; color: #c0392b; }
+.diff-ins { background: #e6ffec; color: #22863a; }
+.diff-box {
+  font-family: Consolas, 'Microsoft YaHei', monospace;
+  font-size: 14px; line-height: 1.8;
+  background: white; border: 1px solid #eee; border-radius: 6px; padding: 12px;
+}
+.diff-box div { padding: 1px 6px; white-space: pre-wrap; word-break: break-all; }
+
+/* --- 空状态：大号图标 --- */
+.empty-state { text-align: center; padding: 60px 20px; color: #8a94a3; }
+.empty-state .empty-icon { font-size: 52px; display: block; margin-bottom: 10px; }
+
+/* --- 登录/注册页：顶部留白 --- */
+.auth-page { padding-top: 60px; }
+
+/* --- 居中提示页（403 / 删除确认） --- */
+.centered-page { padding: 80px 0; }
+
+/* --- 个人中心信息卡数字：主题蓝 --- */
+.stat-number { color: #4A90D9; }
+
+/* --- 返回链接 --- */
+.back-link { color: #6c757d; text-decoration: none; font-size: 14px; }
+.back-link:hover { color: #4A90D9; }
+
+/* --- 编辑页实时预览区 --- */
+.editor-preview { position: sticky; top: 16px; min-height: 400px; max-height: calc(100vh - 32px); overflow-y: auto; }
+.editor-preview h6 { color: #4A90D9; }
+
+/* --- 页脚 --- */
+.site-footer {
+  background: #fff;
+  border-top: 1px solid #e6edf5;
+  color: #8a94a3;
+  text-align: center;
+  padding: 18px 0;
+  margin-top: 40px;
+  font-size: 13px;
+}

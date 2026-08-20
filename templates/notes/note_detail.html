@@ -1,0 +1,73 @@
+{% extends 'base.html' %}
+{% block title %}{{ note.title }}{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-lg-9">
+    <h2>{{ note.title }}</h2>
+    <p class="text-muted">
+      {{ note.author.username }} · {{ note.updated_at|date:"Y-m-d H:i" }}
+      · 👁 {{ note.view_count }}
+      {% if note.is_public %}<span class="badge bg-success">公开</span>{% else %}<span class="badge bg-secondary">私有</span>{% endif %}
+      {% if note.is_pinned %}<span class="badge bg-warning">📌 置顶</span>{% endif %}
+    </p>
+    <div class="mt-2">{% for tag in note.tags.all %}<span class="tag-badge">{{ tag.name }}</span>{% endfor %}</div>
+    <hr>
+    <div class="markdown-body">{{ html|safe }}</div>
+  </div>
+  <div class="col-lg-3">
+    {% if toc %}
+    <div class="card p-3 mb-3 side-card side-card-blue">
+      <h6>📑 目录</h6>
+      <div class="toc">{{ toc|safe }}</div>
+    </div>
+    {% endif %}
+    <div class="card p-3 mb-3 side-card side-card-purple">
+      <h6>🤖 AI 助手</h6>
+      <button id="ai-summarize-btn" class="btn btn-outline-secondary btn-sm w-100">📝 帮我总结</button>
+      <div id="ai-summary-box" class="ai-result mt-2 d-none"></div>
+    </div>
+    <div class="card p-3 mb-3 side-card side-card-green">
+      <h6>工具</h6>
+      <a href="{% url 'note_pdf' note.pk %}" class="btn btn-outline-secondary btn-sm w-100">📄 导出 PDF</a>
+    </div>
+    {% if user == note.author %}
+    <div class="card p-3 side-card side-card-orange">
+      <h6>操作</h6>
+      <a href="{% url 'note_edit' note.pk %}" class="btn btn-outline-primary btn-sm w-100 mb-2">✏️ 编辑</a>
+      <a href="{% url 'note_history' note.pk %}" class="btn btn-outline-secondary btn-sm w-100 mb-2">🕐 历史版本</a>
+      <a href="{% url 'note_delete' note.pk %}" class="btn btn-outline-danger btn-sm w-100">🗑 删除</a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+<script>
+// ========== AI 总结：点击按钮 → 调后端 → 结果显示在卡片里 ==========
+var summarizeBtn = document.getElementById('ai-summarize-btn');
+var summaryBox = document.getElementById('ai-summary-box');
+
+summarizeBtn.addEventListener('click', function () {
+    // 点过之后先禁用按钮，显示等待文字，防止连点重复调用（烧钱）
+    summarizeBtn.disabled = true;
+    summarizeBtn.textContent = '⏳ 生成中...';
+    summaryBox.classList.add('d-none');
+
+    fetch("{% url 'note_ai_summarize' note.pk %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value}
+    }).then(function (resp) { return resp.json(); })
+      .then(function (data) {
+          if (data.error) { summaryBox.textContent = '出错了：' + data.error; }
+          else { summaryBox.textContent = data.result; }
+          summaryBox.classList.remove('d-none');
+      })
+      .catch(function () {
+          summaryBox.textContent = '请求失败，请检查网络';
+          summaryBox.classList.remove('d-none');
+      })
+      .finally(function () {
+          summarizeBtn.disabled = false;
+          summarizeBtn.textContent = '📝 帮我总结';
+      });
+});
+</script>
+{% endblock %}

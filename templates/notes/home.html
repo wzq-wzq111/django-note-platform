@@ -1,0 +1,48 @@
+{% extends 'base.html' %}
+{% block title %}首页 — 笔记平台{% endblock %}
+{% block content %}
+<div class="row">
+  <div class="col-md-8">
+    <form class="mb-4" method="get">
+      <div class="input-group">
+        <input class="form-control" name="q" value="{{ query }}" placeholder="🔍 搜索公开笔记...">
+        <button class="btn btn-primary">搜索</button>
+      </div>
+    </form>
+
+    {% if notes %}
+      {% for note in notes %}
+      <div class="note-card d-flex gap-3">
+        {% if note.first_image %}
+          <img src="{{ note.first_image }}" class="note-thumb" alt="">
+        {% endif %}
+        <div class="flex-grow-1">
+          <a href="{% url 'note_detail' note.pk %}">
+            <h5>{{ note.title }}</h5>
+            <small class="text-muted">
+              {{ note.author.username }} · {{ note.updated_at|date:"Y-m-d H:i" }}
+              · 👁 {{ note.view_count }}
+              {% if note.is_pinned %}· 📌 置顶{% endif %}
+            </small>
+            <p class="text-muted mt-2 mb-0">{{ note.content_preview }}</p>
+          </a>
+          <div class="mt-2">{% for tag in note.tags.all %}<span class="tag-badge">{{ tag.name }}</span>{% endfor %}</div>
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <div class="empty-state"><span class="empty-icon">📭</span>{% if query %}没有找到相关笔记{% else %}还没有公开笔记{% endif %}</div>
+    {% endif %}
+  </div>
+  <div class="col-md-4">
+    <div class="card p-3">
+      <h6>热门标签</h6>
+      {% for tag in tags %}
+        <span class="tag-badge mb-1">{{ tag.name }}</span>
+      {% empty %}
+        <small class="text-muted">暂无标签</small>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}
