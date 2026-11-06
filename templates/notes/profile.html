@@ -20,6 +20,21 @@
 </div>
 
 <div class="row">
+  <div class="col-12 mb-3">
+    <div class="note-card">
+      <h6>💬 问数据</h6>
+      <p class="text-muted mb-2">像聊天一样问，例如「我这个月写了多少篇笔记」「近 7 天浏览量怎么样」</p>
+      <input type="hidden" name="csrfmiddlewaretoken" value="{{ csrf_token }}">
+      <div class="input-group">
+        <input class="form-control" id="stats-question" placeholder="输入你的问题...">
+        <button class="btn btn-primary" id="stats-ask-btn">提问</button>
+      </div>
+      <div id="stats-answer" class="ai-result mt-2 d-none"></div>
+    </div>
+  </div>
+</div>
+
+<div class="row">
   <div class="col-lg-7 mb-3">
     <div class="note-card">
       <h6>最近 30 天创作趋势</h6>
@@ -50,6 +65,43 @@
 {% endblock %}
 
 {% block extra_js %}
+<script>
+  // ========== 💬 问数据：问题发给后端，LLM 理解意图，后端查库拼回答 ==========
+  var askBtn = document.getElementById('stats-ask-btn');
+  var questionInput = document.getElementById('stats-question');
+  var answerBox = document.getElementById('stats-answer');
+
+  function askStats() {
+    var question = questionInput.value.trim();
+    if (!question) { questionInput.focus(); return; }
+    askBtn.disabled = true;
+    askBtn.textContent = '⏳ 查询中...';
+    answerBox.classList.add('d-none');
+
+    var formData = new FormData();
+    formData.append('question', question);
+
+    fetch("{% url 'note_stats_ask' %}", {
+        method: 'POST',
+        headers: {'X-CSRFToken': document.querySelector('[name=csrfmiddlewaretoken]').value},
+        body: formData
+    }).then(function (resp) { return resp.json(); })
+      .then(function (data) {
+          answerBox.textContent = data.error || data.answer;
+          answerBox.classList.remove('d-none');
+      })
+      .catch(function () {
+          answerBox.textContent = '请求失败，请检查网络';
+          answerBox.classList.remove('d-none');
+      })
+      .finally(function () { askBtn.disabled = false; askBtn.textContent = '提问'; });
+  }
+
+  askBtn.addEventListener('click', askStats);
+  questionInput.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') askStats();
+  });
+</script>
 <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/4.5.0/chart.umd.min.js"></script>
 <script>
   // 图表配色（经 dataviz 校验脚本通过）：系列蓝 #4A90D9 + 中性文字色，单系列不显示图例

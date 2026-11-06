@@ -23,8 +23,8 @@
     {% if notes %}
       {% for note in notes %}
       <div class="note-card d-flex align-items-start gap-3">
-        {% if note.first_image %}
-          <img src="{{ note.first_image }}" class="note-thumb" alt="">
+        {% if note.thumb_image %}
+          <img src="{{ note.thumb_image }}" class="note-thumb" alt="" loading="lazy" width="130" height="90">
         {% endif %}
         <a href="{% url 'note_detail' note.pk %}" class="flex-grow-1">
           <h5>{{ note.title }} {% if note.is_public %}<span class="badge bg-success">公开</span>{% else %}<span class="badge bg-secondary">私有</span>{% endif %}</h5>

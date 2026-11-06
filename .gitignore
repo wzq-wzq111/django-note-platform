@@ -11,6 +11,23 @@ media/
 # 环境变量（API 密钥等）
 .env
 
+# 语义搜索向量库
+chroma_db/
+
 # 虚拟环境
 venv/
 .venv/
+
+# 编辑器 / IDE 配置
+.idea/
+.vscode/
+
+# 本地工作产物（诊断报告、备份等，不属于源码）
+outputs/
+
+# 工作台助手的项目记忆
+.workbuddy/
+
+# 跑服务时产生的日志
+dev-logs/*.log
+*.log

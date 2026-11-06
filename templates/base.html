@@ -4,10 +4,29 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>{% block title %}笔记平台{% endblock %}</title>
+<link rel="icon" href="{% static 'img/favicon.ico' %}" sizes="any">
+<link rel="icon" type="image/png" sizes="32x32" href="{% static 'img/favicon-32.png' %}">
+<link rel="apple-touch-icon" href="{% static 'img/apple-touch-icon.png' %}">
 <link href="https://cdn.bootcdn.net/ajax/libs/twitter-bootstrap/5.3.3/css/bootstrap.min.css" rel="stylesheet">
 <link href="{% static 'css/site.css' %}" rel="stylesheet">
 </head>
 <body>
+{# 宇宙装饰层：银河光带、行星、闪烁星星（纯装饰，不影响点击） #}
+<div class="cosmos" aria-hidden="true">
+  <span class="planet planet-saturn"></span>
+  <span class="planet planet-neptune"></span>
+  <span class="star-twinkle" style="left: 8%;  top: 18%;"></span>
+  <span class="star-twinkle" style="left: 22%; top: 8%;  animation-delay: 0.8s;"></span>
+  <span class="star-twinkle" style="left: 35%; top: 30%; animation-delay: 1.6s;"></span>
+  <span class="star-twinkle" style="left: 48%; top: 12%; animation-delay: 0.4s;"></span>
+  <span class="star-twinkle" style="left: 60%; top: 22%; animation-delay: 1.2s;"></span>
+  <span class="star-twinkle" style="left: 72%; top: 9%;  animation-delay: 2.0s;"></span>
+  <span class="star-twinkle" style="left: 85%; top: 32%; animation-delay: 0.6s;"></span>
+  <span class="star-twinkle" style="left: 92%; top: 15%; animation-delay: 1.4s;"></span>
+  <span class="shooting-star" style="top: 10%; left: 55%; animation-delay: 0s;"></span>
+  <span class="shooting-star" style="top: 4%;  left: 75%; animation-delay: 3.5s; animation-duration: 11s;"></span>
+  <span class="shooting-star" style="top: 20%; left: 88%; animation-delay: 7s; animation-duration: 14s;"></span>
+</div>
 <nav class="navbar navbar-expand-lg site-navbar">
   <div class="container">
     <a class="navbar-brand" href="{% url 'home' %}">📝 笔记平台</a>
@@ -17,7 +36,10 @@
         <a class="nav-link" href="{% url 'my_notes' %}">📒 我的笔记</a>
         <a class="nav-link" href="{% url 'note_create' %}">✏️ 写笔记</a>
         <a class="nav-link" href="{% url 'profile' %}">👤 个人中心</a>
-        <a class="nav-link" href="{% url 'logout' %}">退出</a>
+        <form method="post" action="{% url 'logout' %}" class="d-inline m-0">
+          {% csrf_token %}
+          <button type="submit" class="nav-link btn btn-link p-0 border-0 align-baseline">退出</button>
+        </form>
       {% else %}
         <a class="nav-link" href="{% url 'login' %}">登录</a>
         <a class="nav-link" href="{% url 'register' %}">注册</a>

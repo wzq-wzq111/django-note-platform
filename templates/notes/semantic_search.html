@@ -1,0 +1,34 @@
+{% extends 'base.html' %}
+{% block title %}语义搜索{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-lg-9">
+    <h2>🔍 语义搜索</h2>
+    <p class="text-muted">不用精确关键词，用一句话描述你想找的内容，比如「关于数据库优化的笔记」</p>
+    <form class="mb-4" method="get">
+      <div class="input-group">
+        <input class="form-control" name="q" value="{{ query }}" placeholder="按意思搜索...">
+        <button class="btn btn-primary">搜索</button>
+      </div>
+    </form>
+    {% if fallback %}
+      <div class="alert alert-warning">向量搜索暂不可用，已自动切换为关键词搜索。</div>
+    {% endif %}
+    {% if query and results %}
+      {% for note in results %}
+      <div class="note-card d-flex align-items-start gap-3">
+        {% if note.thumb_image %}
+          <img src="{{ note.thumb_image }}" class="note-thumb" alt="" loading="lazy" width="130" height="90">
+        {% endif %}
+        <a href="{% url 'note_detail' note.pk %}" class="flex-grow-1">
+          <h5>{{ note.title }} {% if note.is_public %}<span class="badge bg-success">公开</span>{% else %}<span class="badge bg-secondary">私有</span>{% endif %}</h5>
+          <small class="text-muted">{{ note.content_preview }}</small>
+        </a>
+      </div>
+      {% endfor %}
+    {% elif query %}
+      <div class="empty-state"><span class="empty-icon">🔍</span>没有找到相关笔记</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

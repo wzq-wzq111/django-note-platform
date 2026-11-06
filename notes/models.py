@@ -76,13 +76,25 @@ class Note(models.Model):
         # 先整段去掉图片/链接语法（如 ![名字](地址)），避免图片名和路径残留进摘要
         text = re.sub(r'!?\[[^\]]*\]\([^)]*\)', '', self.content)
         text = re.sub(r'[#*_~`>\[\]()!|-]', '', text)
-        return text[:120] + ('...' if len(self.content) > 120 else '')
+        text = re.sub(r'\s+', ' ', text).strip()
+        # 省略号按清洗后的实际长度判断：原来拿原文长度比，
+        # 一篇 150 字但大半是图片语法的笔记，摘要只有 20 字也会被加上 "..."
+        return text[:120] + ('...' if len(text) > 120 else '')
 
     def first_image(self):
-        """提取正文里第一张图片的地址，用于列表卡片缩略图；没有图片返回空字符串"""
+        """提取正文里第一张图片的地址（详情页、PDF 用的都是原图）"""
         import re
         match = re.search(r'!\[[^\]]*\]\(([^)\s]+)', self.content)
         return match.group(1) if match else ''
+
+    def thumb_image(self):
+        """列表卡片用的小图：优先用 _thumb.jpg，没有（老图 / 外链图）回退原图。
+
+        模板里卡片只显示 130×90 像素，没必要让浏览器下载几 MB 的原图。
+        """
+        from . import images
+        url = self.first_image()
+        return images.thumb_url(url) or url
 
 
 def note_image_path(instance, filename):

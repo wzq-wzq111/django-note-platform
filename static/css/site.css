@@ -3,24 +3,152 @@
    注意：个人中心的图表配色（Chart.js 内常量）经 dataviz 校验，
    不在本文件覆盖，仅美化一般界面元素。 */
 
-/* --- 基础 --- */
+/* --- 基础：宇宙银河深空背景（纯 CSS，无外部图片） --- */
 body {
-  background: linear-gradient(180deg, #eef4fb 0%, #f7f8fa 45%);
+  /* 多层背景从前往后：三层错位星星点阵 → 银河光带 → 三团星云 → 深空底色 */
+  background:
+    radial-gradient(1px 1px at 15% 25%, rgba(255, 255, 255, 0.9) 50%, transparent 51%),
+    radial-gradient(1px 1px at 60% 70%, rgba(255, 255, 255, 0.7) 50%, transparent 51%),
+    radial-gradient(2px 2px at 85% 15%, rgba(255, 255, 255, 0.8) 50%, transparent 51%),
+    linear-gradient(105deg, transparent 30%, rgba(160, 180, 255, 0.08) 45%,
+                    rgba(200, 215, 255, 0.14) 50%, rgba(160, 180, 255, 0.08) 55%, transparent 70%),
+    radial-gradient(ellipse 60% 40% at 75% 20%, rgba(124, 58, 237, 0.28), transparent 70%),
+    radial-gradient(ellipse 50% 35% at 20% 85%, rgba(56, 120, 255, 0.22), transparent 70%),
+    radial-gradient(ellipse 40% 30% at 90% 70%, rgba(217, 70, 180, 0.14), transparent 70%),
+    linear-gradient(180deg, #050816 0%, #0a1030 45%, #151a45 100%);
+  background-size:
+    220px 220px, 320px 320px, 420px 420px,
+    100% 55%,
+    100% 100%, 100% 100%, 100% 100%,
+    100% 100%;
+  background-position:
+    0 0, 60px 110px, 30px 50px,
+    0 12%,
+    0 0, 0 0, 0 0,
+    0 0;
   background-attachment: fixed;
   font-family: 'Microsoft YaHei', sans-serif;
-  color: #2c3e50;
+  color: #dfe4f5;   /* 深空背景上的默认文字用浅色（卡片内文字由各自样式控制） */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  /* Bootstrap 次要文字在深色背景上改浅灰蓝（卡片白底上同样可读） */
+  --bs-secondary-color: #a8b3d6;
 }
 
 /* 内容区占满剩余高度，让页脚贴底 */
 .container { flex: 1 0 auto; }
 
-/* --- 导航栏：蓝→紫渐变 --- */
+/* --- 宇宙装饰层：银河光带 + 行星 + 闪烁星星（position:fixed 层在内容下方） --- */
+.cosmos {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;   /* 装饰层不拦截任何点击 */
+  overflow: hidden;
+}
+
+/* 倾斜银河光带：中间亮两边淡 */
+.cosmos::before {
+  content: '';
+  position: absolute;
+  left: -20%; right: -20%;
+  top: 18%;
+  height: 38%;
+  transform: rotate(-14deg);
+  background:
+    radial-gradient(ellipse 30% 60% at 30% 50%, rgba(255, 255, 255, 0.10), transparent 70%),
+    radial-gradient(ellipse 25% 55% at 60% 45%, rgba(190, 205, 255, 0.12), transparent 70%),
+    linear-gradient(90deg, transparent 0%, rgba(255, 255, 255, 0.06) 20%, rgba(220, 228, 255, 0.16) 40%,
+                    rgba(255, 255, 255, 0.22) 50%, rgba(220, 228, 255, 0.16) 60%,
+                    rgba(255, 255, 255, 0.06) 80%, transparent 100%);
+  filter: blur(6px);
+}
+
+/* 行星通用：渐变球体（左上受光）+ 缓慢上下漂浮 */
+.planet {
+  position: absolute;
+  border-radius: 50%;
+  animation: planet-float 9s ease-in-out infinite;
+}
+@keyframes planet-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-14px); }
+}
+
+/* 土星：金黄色球体 + 倾斜光环 */
+.planet-saturn {
+  width: 92px; height: 92px;
+  right: 7%; top: 13%;
+  background: radial-gradient(circle at 32% 28%, #ffe3a3 0%, #e8b25c 45%, #a8763e 75%, #6e4a22 100%);
+  box-shadow: 0 0 40px rgba(232, 178, 92, 0.25);
+}
+.planet-saturn::after {
+  content: '';
+  position: absolute;
+  left: 50%; top: 50%;
+  width: 150px; height: 46px;
+  transform: translate(-50%, -50%) rotate(-18deg);
+  border: 7px solid rgba(236, 216, 178, 0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 12px rgba(236, 216, 178, 0.3) inset;
+}
+
+/* 海王星：蓝色小球 */
+.planet-neptune {
+  width: 44px; height: 44px;
+  left: 12%; top: 46%;
+  background: radial-gradient(circle at 35% 30%, #8fc4ff 0%, #4a86e8 50%, #1e3a8a 100%);
+  box-shadow: 0 0 26px rgba(74, 134, 232, 0.3);
+  animation-delay: 2s;
+}
+
+/* 闪烁星星 */
+.star-twinkle {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 6px 1px rgba(255, 255, 255, 0.8);
+  animation: twinkle 3s ease-in-out infinite;
+}
+@keyframes twinkle {
+  0%, 100% { opacity: 0.25; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.15); }
+}
+
+/* 流星：亮点 + 渐变拖尾，右上向左下划过，循环错开 */
+.shooting-star {
+  position: absolute;
+  width: 3px; height: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 0 8px 2px rgba(255, 255, 255, 0.75);
+  opacity: 0;
+  animation: shoot 8s linear infinite;
+}
+.shooting-star::after {
+  content: '';
+  position: absolute;
+  left: 2px; top: 1px;
+  width: 120px; height: 1.5px;
+  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9), transparent);
+  border-radius: 1px;
+}
+@keyframes shoot {
+  0%   { transform: translate(0, 0) rotate(-25deg); opacity: 0; }
+  3%   { opacity: 1; }
+  55%  { opacity: 0.9; }
+  100% { transform: translate(-60vw, 28vh) rotate(-25deg); opacity: 0; }
+}
+
+/* 导航、内容、页脚浮在宇宙装饰层之上 */
+.site-navbar, .container, .site-footer { position: relative; z-index: 1; }
+
+/* --- 导航栏：夜空蓝紫渐变 --- */
 .site-navbar {
-  background: linear-gradient(135deg, #4A90D9, #7B6BE6);
-  box-shadow: 0 2px 10px rgba(74, 144, 217, 0.35);
+  background: linear-gradient(135deg, #1c2a63, #3a2b78);
+  box-shadow: 0 2px 14px rgba(10, 14, 40, 0.6);
   margin-bottom: 24px;
 }
 .site-navbar .navbar-brand { font-weight: bold; color: #fff !important; font-size: 1.3rem; }
@@ -115,7 +243,13 @@ body {
   margin: 2px;
 }
 
-/* --- 正文排版（Markdown 渲染） --- */
+/* --- 正文排版（Markdown 渲染）：白色卡片底，保证深空背景上可读 --- */
+.markdown-body {
+  background: #fff;
+  border-radius: 12px;
+  padding: 20px 24px;
+  color: #333;
+}
 .markdown-body h1, .markdown-body h2, .markdown-body h3 { margin-top: 24px; color: #2c3e50; }
 .markdown-body h1, .markdown-body h2 {
   border-left: 4px solid #4A90D9;
@@ -144,7 +278,7 @@ body {
 .diff-box div { padding: 1px 6px; white-space: pre-wrap; word-break: break-all; }
 
 /* --- 空状态：大号图标 --- */
-.empty-state { text-align: center; padding: 60px 20px; color: #8a94a3; }
+.empty-state { text-align: center; padding: 60px 20px; color: #8b93b8; }
 .empty-state .empty-icon { font-size: 52px; display: block; margin-bottom: 10px; }
 
 /* --- 登录/注册页：顶部留白 --- */
@@ -157,18 +291,18 @@ body {
 .stat-number { color: #4A90D9; }
 
 /* --- 返回链接 --- */
-.back-link { color: #6c757d; text-decoration: none; font-size: 14px; }
-.back-link:hover { color: #4A90D9; }
+.back-link { color: #8b93b8; text-decoration: none; font-size: 14px; }
+.back-link:hover { color: #b9c8ff; }
 
 /* --- 编辑页实时预览区 --- */
 .editor-preview { position: sticky; top: 16px; min-height: 400px; max-height: calc(100vh - 32px); overflow-y: auto; }
 .editor-preview h6 { color: #4A90D9; }
 
-/* --- 页脚 --- */
+/* --- 页脚：深色半透明，融入星空 --- */
 .site-footer {
-  background: #fff;
-  border-top: 1px solid #e6edf5;
-  color: #8a94a3;
+  background: rgba(10, 14, 40, 0.7);
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  color: #8b93b8;
   text-align: center;
   padding: 18px 0;
   margin-top: 40px;

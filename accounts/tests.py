@@ -1,13 +1,16 @@
 """
 账号应用 — 单元测试
 
-覆盖：注册（成功自动登录、密码不一致）、登录（成功/失败）、登出。
+覆盖：注册（成功自动登录、密码不一致、弱密码拒绝）、登录（成功/失败/失败锁定）、登出。
 
 运行：python manage.py test accounts
 """
 from django.contrib.auth.models import User
 from django.test import TestCase
 from django.urls import reverse
+
+# 注册用的合法密码：够长、非纯数字、不在常见密码表里
+STRONG_PASSWORD = 'Note#2026pass'
 
 
 class RegisterTests(TestCase):
@@ -19,7 +22,7 @@ class RegisterTests(TestCase):
 
     def test_register_success_logs_in_and_redirects_home(self):
         response = self.client.post(reverse('register'), {
-            'username': '新用户', 'password1': 'abc123456', 'password2': 'abc123456',
+            'username': '新用户', 'password1': STRONG_PASSWORD, 'password2': STRONG_PASSWORD,
         })
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('home'))
@@ -30,11 +33,20 @@ class RegisterTests(TestCase):
 
     def test_register_password_mismatch_shows_form_error(self):
         response = self.client.post(reverse('register'), {
-            'username': '新用户', 'password1': 'abc123456', 'password2': '不一样',
+            'username': '新用户', 'password1': STRONG_PASSWORD, 'password2': '不一样',
         })
         self.assertEqual(response.status_code, 200)
         self.assertIn('password2', response.context['form'].errors)
         self.assertFalse(User.objects.filter(username='新用户').exists())
+
+    def test_register_weak_password_rejected(self):
+        # 启用了密码校验器：纯数字/过短密码不再能注册
+        response = self.client.post(reverse('register'), {
+            'username': 'weakuser', 'password1': '123456', 'password2': '123456',
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('password2', response.context['form'].errors)
+        self.assertFalse(User.objects.filter(username='weakuser').exists())
 
 
 class LoginTests(TestCase):
@@ -62,9 +74,21 @@ class LoginTests(TestCase):
         messages = [str(m) for m in response.context['messages']]
         self.assertIn('用户名或密码错误', messages)
 
+    def test_login_locked_after_too_many_failures(self):
+        # 连续失败 5 次后，第 6 次直接拒绝（429），不再去查密码
+        for _ in range(5):
+            self.client.post(reverse('login'), {'username': 'lockme', 'password': '错的'})
+        response = self.client.post(reverse('login'), {'username': 'lockme', 'password': '错的'})
+        self.assertEqual(response.status_code, 429)
+
+    def test_logout_requires_post(self):
+        # 登出只接受 POST：GET 链接不能再被第三方页面诱导触发
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(reverse('logout')).status_code, 405)
+
     def test_logout_redirects_home_and_clears_session(self):
         self.client.force_login(self.user)
-        response = self.client.get(reverse('logout'))
+        response = self.client.post(reverse('logout'))
         self.assertEqual(response.status_code, 302)
         self.assertEqual(response.url, reverse('home'))
         # 会话已清空
